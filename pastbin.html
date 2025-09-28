@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PastBin - Продвинутый текстовый хостинг</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #0a0a0a;
+            color: #e0e0e0;
+            line-height: 1.6;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 25% 25%, #1a1a1a 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, #2a1a2a 0%, transparent 50%);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Навигационная панель */
+        .navbar {
+            background-color: #151515;
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.5);
+            border-bottom: 1px solid #333;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .nav-logo h1 {
+            font-size: 1.8rem;
+            color: #ff4444;
+            text-shadow: 0 0 10px rgba(255, 68, 68, 0.3);
+        }
+
+        .nav-search {
+            display: flex;
+            gap: 0.5rem;
+            flex: 1;
+            max-width: 400px;
+            margin: 0 2rem;
+        }
+
+        .nav-search input {
+            padding: 0.5rem 1rem;
+            border: 1px solid #333;
+            border-radius: 25px;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            flex: 1;
+        }
+
+        .nav-search input:focus {
+            outline: none;
+            border-color: #ff4444;
+            box-shadow: 0 0 10px rgba(255, 68, 68, 0.2);
+        }
+
+        .nav-search button, .nav-auth button {
+            padding: 0.5rem 1.5rem;
+            background: linear-gradient(135deg, #ff4444, #cc3333);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .nav-search button:hover, .nav-auth button:hover {
+            background: linear-gradient(135deg, #ff5555, #dd4444);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 68, 68, 0.3);
+        }
+
+        #addPasteBtn {
+            font-size: 1.5rem;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #00c851, #007e33);
+            border-radius: 50%;
+        }
+
+        #addPasteBtn:hover {
+            background: linear-gradient(135deg, #00d855, #008f3a);
+        }
+
+        .nav-auth {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        #telegramBtn {
+            background: linear-gradient(135deg, #0088cc, #006699);
+        }
+
+        #telegramBtn:hover {
+            background: linear-gradient(135deg, #0099dd, #0077aa);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #1a1a1a;
+            border-radius: 20px;
+            border: 1px solid #333;
+        }
+
+        .user-rating {
+            color: #ffd700;
+            font-size: 0.9rem;
+        }
+
+        /* Основной контент */
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .welcome-section, .auth-section, .paste-section {
+            background: linear-gradient(135deg, #1a1a1a, #252525);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            margin-bottom: 2rem;
+            border: 1px solid #333;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .welcome-section::before, .auth-section::before, .paste-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ff4444, #ffaa00, #ff4444);
+        }
+
+        .welcome-section h2, .auth-section h2, .paste-section h2 {
+            margin-bottom: 1rem;
+            color: #ff4444;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        /* Формы */
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        input, textarea, select {
+            padding: 1rem;
+            border: 1px solid #333;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: #2a2a2a;
+            color: #e0e0e0;
+            transition: all 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #ff4444;
+            box-shadow: 0 0 15px rgba(255, 68, 68, 0.2);
+        }
+
+        textarea {
+            min-height: 300px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+            line-height: 1.4;
+        }
+
+        button {
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #ff4444, #cc3333);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #ff5555, #dd4444);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 68, 68, 0.3);
+        }
+
+        a {
+            color: #ffaa00;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        a:hover {
+            color: #ffcc00;
+            text-decoration: underline;
+        }
+
+        /* Настройки пасты */
+        .paste-settings {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Карточки паст */
+        .paste-card {
+            background: linear-gradient(135deg, #1e1e1e, #2a2a2a);
+            border-left: 4px solid #ff4444;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+        }
+
+        .paste-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(255, 68, 68, 0.2);
+        }
+
+        .paste-card h3 {
+            color: #ff4444;
+            margin-bottom: 0.5rem;
+            font-size: 1.3rem;
+        }
+
+        .paste-card .paste-meta {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .paste-card .paste-id {
+            background: #333;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .paste-card .paste-content {
+            white-space: pre-wrap;
+            margin-bottom: 1rem;
+            background: #2a2a2a;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #333;
+            font-family: 'Courier New', monospace;
+            line-height: 1.4;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .paste-card .paste-author {
+            color: #ffaa00;
+            font-weight: bold;
+        }
+
+        .paste-card .paste-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .paste-card .edit-btn {
+            background: linear-gradient(135deg, #ffaa00, #cc8800);
+        }
+
+        .paste-card .edit-btn:hover {
+            background: linear-gradient(135deg, #ffbb00, #dd9900);
+        }
+
+        .paste-card .delete-btn {
+            background: linear-gradient(135deg, #ff4444, #cc3333);
+        }
+
+        .paste-card .delete-btn:hover {
+            background: linear-gradient(135deg, #ff5555, #dd4444);
+        }
+
+        .paste-card .comment-btn {
+            background: linear-gradient(135deg, #0088cc, #006699);
+        }
+
+        .paste-card .comment-btn:hover {
+            background: linear-gradient(135deg, #0099dd, #0077aa);
+        }
+
+        /* Комментарии */
+        .comments-section {
+            margin-top: 2rem;
+            border-top: 1px solid #333;
+            padding-top: 1rem;
+        }
+
+        .comment {
+            background: #2a2a2a;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            border-left: 3px solid #0088cc;
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .comment-author {
+            color: #ffaa00;
+            font-weight: bold;
+        }
+
+        /* Модальное окно */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a1a, #252525);
+            padding: 2rem;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            border: 1px solid #333;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .close {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #aaa;
+            transition: color 0.3s;
+        }
+
+        .close:hover {
+            color: #ff4444;
+        }
+
+        /* Уведомления */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #00c851, #007e33);
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            z-index: 1001;
+            font-weight: bold;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            border-left: 4px solid #00ff00;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, #ff4444, #cc0000);
+            border-left-color: #ff0000;
+        }
+
+        /* Статистика */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #1a1a1a, #252525);
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ff4444;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .nav-search {
+                width: 100%;
+                max-width: none;
+                margin: 0;
+            }
+            
+            .container {
+                margin: 1rem auto;
+            }
+            
+            .paste-settings {
+                grid-template-columns: 1fr;
+            }
+            
+            .paste-card .paste-actions {
+                flex-direction: column;
+            }
+            
+            .user-info {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        /* Прокрутка */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #ff4444;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff5555;
+        }
+
+        /* Анимации */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .paste-card, .stat-card, .welcome-section, .auth-section, .paste-section {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- Навигационная панель -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h1><i class="fas fa-skull-crossbones"></i> PastBin</h1>
+            </div>
+            <div class="nav-search">
+                <input type="text" id="searchInput" placeholder="Поиск по ID или содержимому...">
+                <button id="searchBtn"><i class="fas fa-search"></i> Найти</button>
+            </div>
+            <div class="nav-auth">
+                <button id="telegramBtn"><i class="fab fa-telegram"></i> AttackPsychos</button>
+                <div id="userInfo" class="user-info hidden">
+                    <span id="userName"></span>
+                    <span class="user-rating" id="userRating">★4.2</span>
+                    <span id="userStats">Паст: 0</span>
+                </div>
+                <button id="loginBtn">Войти</button>
+                <button id="registerBtn">Регистрация</button>
+                <button id="addPasteBtn" class="hidden">+</button>
+                <button id="logoutBtn" class="hidden">Выйти</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+    <main class="container">
+        <!-- Статистика -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-number" id="totalPastes">0</div>
+                <div>Всего паст</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="todayPastes">0</div>
+                <div>Паст сегодня</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalUsers">0</div>
+                <div>Пользователей</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="onlineUsers">0</div>
+                <div>Онлайн сейчас</div>
+            </div>
+        </div>
+
+        <!-- Приветственный блок -->
+        <section id="welcomeSection" class="welcome-section">
+            <h2>Добро пожаловать в PastBin</h2>
+            <p>Продвинутый сервис для обмена текстовыми фрагментами с функциями анонимности и модерации.</p>
+            <div style="margin-top: 1.5rem;">
+                <h3>Возможности системы:</h3>
+                <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                    <li>💀 Анонимное создание паст</li>
+                    <li>🛡️ Защита от автоматического удаления</li>
+                    <li>⭐ Система рейтинга пользователей</li>
+                    <li>💬 Комментарии к пастам</li>
+                    <li>🔍 Поиск по содержимому</li>
+                    <li>⚙️ Настройки срока жизни паст</li>
+                    <li>👁️‍🗨️ Разные уровни приватности</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Форма входа -->
+        <section id="loginSection" class="auth-section hidden">
+            <h2>Вход в систему</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <input type="text" id="loginUsername" placeholder="Имя пользователя" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="loginPassword" placeholder="Пароль" required>
+                </div>
+                <button type="submit"><i class="fas fa-sign-in-alt"></i> Войти в систему</button>
+            </form>
+            <p style="margin-top: 1rem;">Нет аккаунта? <a href="#" id="showRegister">Зарегистрироваться</a></p>
+        </section>
+
+        <!-- Форма регистрации -->
+        <section id="registerSection" class="auth-section hidden">
+            <h2>Регистрация</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <input type="text" id="registerUsername" placeholder="Имя пользователя" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" id="registerEmail" placeholder="Email" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="registerPassword" placeholder="Пароль" required>
+                </div>
+                <button type="submit"><i class="fas fa-user-plus"></i> Создать аккаунт</button>
+            </form>
+            <p style="margin-top: 1rem;">Уже есть аккаунт? <a href="#" id="showLogin">Войти</a></p>
+        </section>
+
+        <!-- Форма создания пасты -->
+        <section id="createPasteSection" class="paste-section hidden">
+            <h2>Создать новую пасту</h2>
+            <div class="paste-settings">
+                <div class="form-group">
+                    <label>Срок жизни:</label>
+                    <select id="pasteExpiration">
+                        <option value="never">Никогда не удалять</option>
+                        <option value="1h">1 час</option>
+                        <option value="1d">1 день</option>
+                        <option value="1w">1 неделя</option>
+                        <option value="1m">1 месяц</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Приватность:</label>
+                    <select id="pasteVisibility">
+                        <option value="public">Публичная</option>
+                        <option value="unlisted">Скрытая (только по ссылке)</option>
+                        <option value="private">Приватная</option>
+                    </select>
+                </div>
+            </div>
+            <form id="createPasteForm">
+                <div class="form-group">
+                    <input type="text" id="pasteTitle" placeholder="Название пасты" required>
+                </div>
+                <div class="form-group">
+                    <textarea id="pasteContent" placeholder="Содержимое пасты..." required></textarea>
+                </div>
+                <button type="submit"><i class="fas fa-save"></i> Опубликовать пасту</button>
+            </form>
+        </section>
+
+        <!-- Результаты поиска -->
+        <section id="searchResults" class="paste-section hidden">
+            <h2>Результаты поиска</h2>
+            <div id="searchResultsContainer"></div>
+        </section>
+
+        <!-- Список паст -->
+        <section id="pastesList" class="paste-section">
+            <h2>Последние публикации</h2>
+            <div id="pastesContainer"></div>
+        </section>
+
+        <!-- Админ-панель -->
+        <section id="adminSection" class="paste-section hidden">
+            <h2><i class="fas fa-cog"></i> Панель администратора</h2>
+            <div id="adminPastesContainer"></div>
+        </section>
+    </main>
+
+    <!-- Модальное окно редактирования -->
+    <div id="editModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Редактировать пасту</h2>
+            <form id="editPasteForm">
+                <input type="hidden" id="editPasteId">
+                <div class="form-group">
+                    <input type="text" id="editPasteTitle" placeholder="Название пасты" required>
+                </div>
+                <div class="form-group">
+                    <textarea id="editPasteContent" placeholder="Содержимое пасты..." required></textarea>
+                </div>
+                <button type="submit"><i class="fas fa-save"></i> Сохранить изменения</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно комментариев -->
+    <div id="commentsModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" id="closeComments">&times;</span>
+            <h2>Комментарии к пасте</h2>
+            <div id="commentsList" class="comments-section"></div>
+            <form id="addCommentForm" class="hidden">
+                <div class="form-group">
+                    <textarea id="commentText" placeholder="Ваш комментарий..." required></textarea>
+                </div>
+                <button type="submit"><i class="fas fa-comment"></i> Добавить комментарий</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Уведомление -->
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // Расширенные данные приложения
+        let users = JSON.parse(localStorage.getItem('pastbin_users')) || [];
+        let pastes = JSON.parse(localStorage.getItem('pastbin_pastes')) || [];
+        let comments = JSON.parse(localStorage.getItem('pastbin_comments')) || [];
+        let currentUser = JSON.parse(localStorage.getItem('pastbin_currentUser')) || null;
+        let isAdmin = currentUser && currentUser.username === 'admin';
+        let userStats = JSON.parse(localStorage.getItem('pastbin_userStats')) || {};
+
+        // Создаем администратора по умолчанию
+        if (!users.find(user => user.username === 'admin')) {
+            users.push({
+                id: generateId(),
+                username: 'admin',
+                email: 'admin@pastbin.com',
+                password: 'admin123',
+                joinDate: new Date().toISOString(),
+                rating: 5.0
+            });
+            userStats['admin'] = { pastesCount: 0, commentsCount: 0, lastActive: new Date().toISOString() };
+            localStorage.setItem('pastbin_users', JSON.stringify(users));
+            localStorage.setItem('pastbin_userStats', JSON.stringify(userStats));
+        }
+
+        // Генерация ID
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Показать уведомление
+        function showNotification(message, isError = false) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${isError ? 'error' : ''}`;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 4000);
+        }
+
+        // Обновление статистики
+        function updateStats() {
+            document.getElementById('totalPastes').textContent = pastes.length;
+            document.getElementById('totalUsers').textContent = users.length;
+            
+            const today = new Date().toDateString();
+            const todayPastes = pastes.filter(paste => new Date(paste.createdAt).toDateString() === today);
+            document.getElementById('todayPastes').textContent = todayPastes.length;
+            
+            // Имитация онлайн пользователей
+            document.getElementById('onlineUsers').textContent = Math.floor(Math.random() * 50) + 10;
+            
+            // Обновление статистики пользователя
+            if (currentUser) {
+                const stats = userStats[currentUser.username] || { pastesCount: 0, commentsCount: 0 };
+                document.getElementById('userStats').textContent = `Паст: ${stats.pastesCount}`;
+                
+                // Расчет рейтинга
+                const rating = currentUser.rating || 4.2;
+                document.getElementById('userRating').textContent = `★${rating.toFixed(1)}`;
+            }
+        }
+
+        // DOM элементы
+        const elements = {
+            welcomeSection: document.getElementById('welcomeSection'),
+            loginSection: document.getElementById('loginSection'),
+            registerSection: document.getElementById('registerSection'),
+            createPasteSection: document.getElementById('createPasteSection'),
+            searchResults: document.getElementById('searchResults'),
+            pastesList: document.getElementById('pastesList'),
+            adminSection: document.getElementById('adminSection'),
+            loginBtn: document.getElementById('loginBtn'),
+            registerBtn: document.getElementById('registerBtn'),
+            addPasteBtn: document.getElementById('addPasteBtn'),
+            logoutBtn: document.getElementById('logoutBtn'),
+            searchBtn: document.getElementById('searchBtn'),
+            searchInput: document.getElementById('searchInput'),
+            telegramBtn: document.getElementById('telegramBtn'),
+            userInfo: document.getElementById('userInfo'),
+            userName: document.getElementById('userName'),
+            userRating: document.getElementById('userRating'),
+            userStats: document.getElementById('userStats'),
+            loginForm: document.getElementById('loginForm'),
+            registerForm: document.getElementById('registerForm'),
+            createPasteForm: document.getElementById('createPasteForm'),
+            editPasteForm: document.getElementById('editPasteForm'),
+            showRegister: document.getElementById('showRegister'),
+            showLogin: document.getElementById('showLogin'),
+            pastesContainer: document.getElementById('pastesContainer'),
+            searchResultsContainer: document.getElementById('searchResultsContainer'),
+            adminPastesContainer: document.getElementById('adminPastesContainer'),
+            editModal: document.getElementById('editModal'),
+            closeModal: document.querySelector('.close'),
+            commentsModal: document.getElementById('commentsModal'),
+            closeComments: document.getElementById('closeComments'),
+            commentsList: document.getElementById('commentsList'),
+            addCommentForm: document.getElementById('addCommentForm'),
+            commentText: document.getElementById('commentText')
+        };
+
+        // Инициализация приложения
+        function initApp() {
+            updateUI();
+            renderPastes();
+            updateStats();
+            if (isAdmin) {
+                renderAdminPastes();
+            }
+        }
+
+        // Обновление UI
+        function updateUI() {
+            if (currentUser) {
+                elements.loginBtn.classList.add('hidden');
+                elements.registerBtn.classList.add('hidden');
+                elements.addPasteBtn.classList.remove('hidden');
+                elements.logoutBtn.classList.remove('hidden');
+                elements.userInfo.classList.remove('hidden');
+                elements.welcomeSection.classList.add('hidden');
+                elements.loginSection.classList.add('hidden');
+                elements.registerSection.classList.add('hidden');
+                
+                elements.userName.textContent = currentUser.username;
+                
+                if (isAdmin) {
+                    elements.adminSection.classList.remove('hidden');
+                } else {
+                    elements.adminSection.classList.add('hidden');
+                }
+            } else {
+                elements.loginBtn.classList.remove('hidden');
+                elements.registerBtn.classList.remove('hidden');
+                elements.addPasteBtn.classList.add('hidden');
+                elements.logoutBtn.classList.add('hidden');
+                elements.userInfo.classList.add('hidden');
+                elements.createPasteSection.classList.add('hidden');
+                elements.adminSection.classList.add('hidden');
+                elements.welcomeSection.classList.remove('hidden');
+            }
+        }
+
+        // Рендер списка паст
+        function renderPastes() {
+            elements.pastesContainer.innerHTML = '';
+            
+            if (pastes.length === 0) {
+                elements.pastesContainer.innerHTML = '<p>Пока нет созданных паст. Будьте первым!</p>';
+                return;
+            }
+            
+            const publicPastes = pastes.filter(paste => paste.visibility !== 'private').slice(-20).reverse();
+            
+            publicPastes.forEach(paste => {
+                const pasteCard = document.createElement('div');
+                pasteCard.className = 'paste-card';
+                pasteCard.innerHTML = `
+                    <h3>${paste.title}</h3>
+                    <div class="paste-meta">
+                        <span class="paste-id">ID: ${paste.id}</span>
+                        <span class="paste-author">Автор: ${paste.author}</span>
+                        <span>${new Date(paste.createdAt).toLocaleDateString()}</span>
+                        <span>💬 ${getCommentsCount(paste.id)}</span>
+                    </div>
+                    <div class="paste-content">${paste.content}</div>
+                    <div class="paste-actions">
+                        <button class="comment-btn" data-id="${paste.id}"><i class="fas fa-comment"></i> Комментарии</button>
+                        ${isAdmin ? `
+                            <button class="edit-btn" data-id="${paste.id}"><i class="fas fa-edit"></i> Редактировать</button>
+                            <button class="delete-btn" data-id="${paste.id}"><i class="fas fa-trash"></i> Удалить</button>
+                        ` : ''}
+                    </div>
+                `;
+                elements.pastesContainer.appendChild(pasteCard);
+            });
+            
+            // Добавляем обработчики для комментариев
+            document.querySelectorAll('.comment-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const pasteId = e.target.getAttribute('data-id');
+                    openCommentsModal(pasteId);
+                });
+            });
+            
+            if (isAdmin) {
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const pasteId = e.target.getAttribute('data-id');
+                        openEditModal(pasteId);
+                    });
+                });
+                
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const pasteId = e.target.getAttribute('data-id');
+                        deletePaste(pasteId);
+                    });
+                });
+            }
+        }
+
+        // Получить количество комментариев
+        function getCommentsCount(pasteId) {
+            return comments.filter(comment => comment.pasteId === pasteId).length;
+        }
+
+        // Рендер паст для администратора
+        function renderAdminPastes() {
+            elements.adminPastesContainer.innerHTML = '';
+            
+            if (pastes.length === 0) {
+                elements.adminPastesContainer.innerHTML = '<p>Нет паст для модерации.</p>';
+                return;
+            }
+            
+            pastes.forEach(paste => {
+                const pasteCard = document.createElement('div');
+                pasteCard.className = 'paste-card';
+                pasteCard.innerHTML = `
+                    <h3>${paste.title}</h3>
+                    <div class="paste-meta">
+                        <span class="paste-id">ID: ${paste.id}</span>
+                        <span class="paste-author">Автор: ${paste.author}</span>
+                        <span>${new Date(paste.createdAt).toLocaleDateString()}</span>
+                        <span>Приватность: ${getVisibilityText(paste.visibility)}</span>
+                    </div>
+                    <div class="paste-content">${paste.content}</div>
+                    <div class="paste-actions">
+                        <button class="edit-btn" data-id="${paste.id}"><i class="fas fa-edit"></i> Редактировать</button>
+                        <button class="delete-btn" data-id="${paste.id}"><i class="fas fa-trash"></i> Удалить</button>
+                    </div>
+                `;
+                elements.adminPastesContainer.appendChild(pasteCard);
+            });
+            
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const pasteId = e.target.getAttribute('data-id');
+                    openEditModal(pasteId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const pasteId = e.target.getAttribute('data-id');
+                    deletePaste(pasteId);
+                });
+            });
+        }
+
+        function getVisibilityText(visibility) {
+            const types = {
+                'public': 'Публичная',
+                'unlisted': 'Скрытая',
+                'private': 'Приватная'
+            };
+            return types[visibility] || 'Публичная';
+        }
+
+        // Поиск паст
+        function searchPaste() {
+            const searchTerm = elements.searchInput.value.trim().toLowerCase();
+            
+            if (!searchTerm) {
+                showNotification('Введите текст для поиска', true);
+                return;
+            }
+            
+            const foundPastes = pastes.filter(paste => 
+                paste.id.toLowerCase().includes(searchTerm) ||
+                paste.title.toLowerCase().includes(searchTerm) ||
+                paste.content.toLowerCase().includes(searchTerm)
+            );
+            
+            elements.searchResultsContainer.innerHTML = '';
+            elements.searchResults.classList.remove('hidden');
+            elements.pastesList.classList.add('hidden');
+            
+            if (foundPastes.length > 0) {
+                foundPastes.forEach(paste => {
+                    const pasteCard = document.createElement('div');
+                    pasteCard.className = 'paste-card';
+                    pasteCard.innerHTML = `
+                        <h3>${paste.title}</h3>
+                        <div class="paste-meta">
+                            <span class="paste-id">ID: ${paste.id}</span>
+                            <span class="paste-author">Автор: ${paste.author}</span>
+                        </div>
+                        <div class="paste-content">${paste.content}</div>
+                    `;
+                    elements.searchResultsContainer.appendChild(pasteCard);
+                });
+                showNotification(`Найдено ${foundPastes.length} паст`);
+            } else {
+                elements.searchResultsContainer.innerHTML = '<p>По вашему запросу ничего не найдено.</p>';
+                showNotification('Пасты не найдены', true);
+            }
+        }
+
+        // Открытие модального окна редактирования
+        function openEditModal(pasteId) {
+            const paste = pastes.find(p => p.id === pasteId);
+            
+            if (paste) {
+                document.getElementById('editPasteId').value = paste.id;
+                document.getElementById('editPasteTitle').value = paste.title;
+                document.getElementById('editPasteContent').value = paste.content;
+                elements.editModal.classList.remove('hidden');
+            }
+        }
+
+        // Закрытие модального окна
+        function closeEditModal() {
+            elements.editModal.classList.add('hidden');
+        }
+
+        // Открытие модального окна комментариев
+        function openCommentsModal(pasteId) {
+            const paste = pastes.find(p => p.id === pasteId);
+            if (!paste) return;
+            
+            elements.commentsList.innerHTML = '';
+            const pasteComments = comments.filter(comment => comment.pasteId === pasteId);
+            
+            if (pasteComments.length === 0) {
+                elements.commentsList.innerHTML = '<p>Пока нет комментариев.</p>';
+            } else {
+                pasteComments.forEach(comment => {
+                    const commentElement = document.createElement('div');
+                    commentElement.className = 'comment';
+                    commentElement.innerHTML = `
+                        <div class="comment-header">
+                            <span class="comment-author">${comment.author}</span>
+                            <span>${new Date(comment.createdAt).toLocaleString()}</span>
+                        </div>
+                        <div class="comment-content">${comment.content}</div>
+                    `;
+                    elements.commentsList.appendChild(commentElement);
+                });
+            }
+            
+            if (currentUser) {
+                elements.addCommentForm.classList.remove('hidden');
+                elements.addCommentForm.onsubmit = (e) => {
+                    e.preventDefault();
+                    addComment(pasteId, elements.commentText.value);
+                    elements.commentText.value = '';
+                };
+            } else {
+                elements.addCommentForm.classList.add('hidden');
+            }
+            
+            elements.commentsModal.classList.remove('hidden');
+        }
+
+        // Закрытие модального окна комментариев
+        function closeCommentsModal() {
+            elements.commentsModal.classList.add('hidden');
+        }
+
+        // Добавление комментария
+        function addComment(pasteId, content) {
+            const newComment = {
+                id: generateId(),
+                pasteId: pasteId,
+                author: currentUser.username,
+                content: content,
+                createdAt: new Date().toISOString()
+            };
+            
+            comments.push(newComment);
+            localStorage.setItem('pastbin_comments', JSON.stringify(comments));
+            
+            // Обновляем статистику пользователя
+            if (!userStats[currentUser.username]) {
+                userStats[currentUser.username] = { pastesCount: 0, commentsCount: 0 };
+            }
+            userStats[currentUser.username].commentsCount++;
+            userStats[currentUser.username].lastActive = new Date().toISOString();
+            localStorage.setItem('pastbin_userStats', JSON.stringify(userStats));
+            
+            showNotification('Комментарий добавлен');
+            openCommentsModal(pasteId); // Перезагружаем комментарии
+            renderPastes(); // Обновляем счетчик комментариев
+            updateStats();
+        }
+
+        // Создание новой пасты
+        function createPaste(title, content, expiration, visibility) {
+            const newPaste = {
+                id: generateId(),
+                title,
+                content,
+                author: currentUser.username,
+                createdAt: new Date().toISOString(),
+                expiration: expiration,
+                visibility: visibility
+            };
+            
+            pastes.push(newPaste);
+            localStorage.setItem('pastbin_pastes', JSON.stringify(pastes));
+            
+            // Обновляем статистику пользователя
+            if (!userStats[currentUser.username]) {
+                userStats[currentUser.username] = { pastesCount: 0, commentsCount: 0 };
+            }
+            userStats[currentUser.username].pastesCount++;
+            userStats[currentUser.username].lastActive = new Date().toISOString();
+            localStorage.setItem('pastbin_userStats', JSON.stringify(userStats));
+            
+            // Очистка формы
+            document.getElementById('pasteTitle').value = '';
+            document.getElementById('pasteContent').value = '';
+            
+            // Обновление UI
+            elements.createPasteSection.classList.add('hidden');
+            elements.pastesList.classList.remove('hidden');
+            renderPastes();
+            updateStats();
+            
+            if (isAdmin) {
+                renderAdminPastes();
+            }
+            
+            showNotification(`Паста создана! ID: ${newPaste.id}`);
+        }
+
+        // Редактирование пасты
+        function editPaste(pasteId, title, content) {
+            const pasteIndex = pastes.findIndex(p => p.id === pasteId);
+            
+            if (pasteIndex !== -1) {
+                pastes[pasteIndex].title = title;
+                pastes[pasteIndex].content = content;
+                localStorage.setItem('pastbin_pastes', JSON.stringify(pastes));
+                
+                closeEditModal();
+                renderPastes();
+                renderAdminPastes();
+                
+                showNotification('Паста успешно обновлена!');
+            }
+        }
+
+        // Удаление пасты
+        function deletePaste(pasteId) {
+            if (confirm('Вы уверены, что хотите удалить эту пасту?')) {
+                pastes = pastes.filter(p => p.id !== pasteId);
+                localStorage.setItem('pastbin_pastes', JSON.stringify(pastes));
+                
+                // Удаляем связанные комментарии
+                comments = comments.filter(comment => comment.pasteId !== pasteId);
+                localStorage.setItem('pastbin_comments', JSON.stringify(comments));
+                
+                renderPastes();
+                renderAdminPastes();
+                updateStats();
+                
+                showNotification('Паста успешно удалена!');
+            }
+        }
+
+        // Регистрация пользователя
+        function registerUser(username, email, password) {
+            const existingUser = users.find(user => user.username === username || user.email === email);
+            
+            if (existingUser) {
+                showNotification('Пользователь с таким именем или email уже существует!', true);
+                return false;
+            }
+            
+            const newUser = {
+                id: generateId(),
+                username,
+                email,
+                password,
+                joinDate: new Date().toISOString(),
+                rating: 4.0 + Math.random() // Случайный рейтинг 4.0-5.0
+            };
+            
+            users.push(newUser);
+            userStats[username] = { pastesCount: 0, commentsCount: 0, lastActive: new Date().toISOString() };
+            
+            localStorage.setItem('pastbin_users', JSON.stringify(users));
+            localStorage.setItem('pastbin_userStats', JSON.stringify(userStats));
+            
+            return true;
+        }
+
+        // Авторизация пользователя
+        function loginUser(username, password) {
+            const user = users.find(u => u.username === username && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                isAdmin = user.username === 'admin';
+                localStorage.setItem('pastbin_currentUser', JSON.stringify(currentUser));
+                
+                // Обновляем время последней активности
+                if (userStats[username]) {
+                    userStats[username].lastActive = new Date().toISOString();
+                    localStorage.setItem('pastbin_userStats', JSON.stringify(userStats));
+                }
+                
+                return true;
+            }
+            
+            return false;
+        }
+
+        // Выход из системы
+        function logout() {
+            currentUser = null;
+            isAdmin = false;
+            localStorage.removeItem('pastbin_currentUser');
+            updateUI();
+            renderPastes();
+            updateStats();
+            showNotification('Вы вышли из системы');
+        }
+
+        // Обработчики событий
+        elements.loginBtn.addEventListener('click', () => {
+            elements.loginSection.classList.remove('hidden');
+            elements.registerSection.classList.add('hidden');
+            elements.welcomeSection.classList.add('hidden');
+            elements.searchResults.classList.add('hidden');
+            elements.pastesList.classList.add('hidden');
+        });
+
+        elements.registerBtn.addEventListener('click', () => {
+            elements.registerSection.classList.remove('hidden');
+            elements.loginSection.classList.add('hidden');
+            elements.welcomeSection.classList.add('hidden');
+            elements.searchResults.classList.add('hidden');
+            elements.pastesList.classList.add('hidden');
+        });
+
+        elements.addPasteBtn.addEventListener('click', () => {
+            elements.createPasteSection.classList.remove('hidden');
+            elements.pastesList.classList.add('hidden');
+            elements.searchResults.classList.add('hidden');
+        });
+
+        elements.logoutBtn.addEventListener('click', logout);
+
+        elements.searchBtn.addEventListener('click', searchPaste);
+
+        elements.searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchPaste();
+            }
+        });
+
+        elements.telegramBtn.addEventListener('click', () => {
+            window.open('https://t.me/AttackPsychos', '_blank');
+        });
+
+        elements.loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (loginUser(username, password)) {
+                updateUI();
+                renderPastes();
+                updateStats();
+                if (isAdmin) {
+                    renderAdminPastes();
+                }
+                showNotification(`Добро пожаловать, ${username}!`);
+            } else {
+                showNotification('Неверное имя пользователя или пароль!', true);
+            }
+        });
+
+        elements.registerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('registerUsername').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            
+            if (registerUser(username, email, password)) {
+                showNotification('Регистрация успешна! Теперь вы можете войти.');
+                elements.registerSection.classList.add('hidden');
+                elements.loginSection.classList.remove('hidden');
+            }
+        });
+
+        elements.createPasteForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const title = document.getElementById('pasteTitle').value;
+            const content = document.getElementById('pasteContent').value;
+            const expiration = document.getElementById('pasteExpiration').value;
+            const visibility = document.getElementById('pasteVisibility').value;
+            
+            createPaste(title, content, expiration, visibility);
+        });
+
+        elements.editPasteForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const pasteId = document.getElementById('editPasteId').value;
+            const title = document.getElementById('editPasteTitle').value;
+            const content = document.getElementById('editPasteContent').value;
+            
+            editPaste(pasteId, title, content);
+        });
+
+        elements.showRegister.addEventListener('click', (e) => {
+            e.preventDefault();
+            elements.registerSection.classList.remove('hidden');
+            elements.loginSection.classList.add('hidden');
+        });
+
+        elements.showLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            elements.loginSection.classList.remove('hidden');
+            elements.registerSection.classList.add('hidden');
+        });
+
+        elements.closeModal.addEventListener('click', closeEditModal);
+        elements.closeComments.addEventListener('click', closeCommentsModal);
+
+        elements.editModal.addEventListener('click', (e) => {
+            if (e.target === elements.editModal) {
+                closeEditModal();
+            }
+        });
+
+        elements.commentsModal.addEventListener('click', (e) => {
+            if (e.target === elements.commentsModal) {
+                closeCommentsModal();
+            }
+        });
+
+        // Инициализация приложения при загрузке
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
