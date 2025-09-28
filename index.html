@@ -1,1 +1,1636 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PastBin - Продвинутый текстовый хостинг</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
+        body {
+            background-color: #000000;
+            color: #e0e0e0;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Навигационная панель */
+        .navbar {
+            background-color: #111111;
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.8);
+            border-bottom: 1px solid #222;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .nav-logo h1 {
+            font-size: 1.8rem;
+            color: #ff4444;
+            text-shadow: 0 0 10px rgba(255, 68, 68, 0.3);
+            cursor: pointer;
+        }
+
+        .nav-search {
+            display: flex;
+            gap: 0.5rem;
+            flex: 1;
+            max-width: 400px;
+            margin: 0 2rem;
+        }
+
+        .nav-search input {
+            padding: 0.5rem 1rem;
+            border: 1px solid #222;
+            border-radius: 25px;
+            background-color: #111;
+            color: #e0e0e0;
+            flex: 1;
+        }
+
+        .nav-search input:focus {
+            outline: none;
+            border-color: #ff4444;
+            box-shadow: 0 0 10px rgba(255, 68, 68, 0.2);
+        }
+
+        .nav-search button, .nav-auth button {
+            padding: 0.5rem 1.5rem;
+            background: linear-gradient(135deg, #ff4444, #cc3333);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .nav-search button:hover, .nav-auth button:hover {
+            background: linear-gradient(135deg, #ff5555, #dd4444);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 68, 68, 0.3);
+        }
+
+        #addPasteBtn {
+            font-size: 1.5rem;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #00c851, #007e33);
+            border-radius: 50%;
+        }
+
+        #addPasteBtn:hover {
+            background: linear-gradient(135deg, #00d855, #008f3a);
+        }
+
+        .nav-auth {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        #telegramBtn {
+            background: linear-gradient(135deg, #0088cc, #006699);
+        }
+
+        #telegramBtn:hover {
+            background: linear-gradient(135deg, #0099dd, #0077aa);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #111;
+            border-radius: 20px;
+            border: 1px solid #222;
+            cursor: pointer;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #ff4444;
+        }
+
+        .user-rating {
+            color: #ffd700;
+            font-size: 0.9rem;
+        }
+
+        /* Основной контент */
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .welcome-section, .auth-section, .paste-section, .profile-section {
+            background: #111;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            margin-bottom: 2rem;
+            border: 1px solid #222;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .welcome-section::before, .auth-section::before, .paste-section::before, .profile-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ff4444, #ffaa00, #ff4444);
+        }
+
+        .welcome-section h2, .auth-section h2, .paste-section h2, .profile-section h2 {
+            margin-bottom: 1rem;
+            color: #ff4444;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        /* Формы */
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        input, textarea, select {
+            padding: 1rem;
+            border: 1px solid #222;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            transition: all 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #ff4444;
+            box-shadow: 0 0 15px rgba(255, 68, 68, 0.2);
+        }
+
+        textarea {
+            min-height: 300px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+            line-height: 1.4;
+        }
+
+        button {
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #ff4444, #cc3333);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #ff5555, #dd4444);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 68, 68, 0.3);
+        }
+
+        a {
+            color: #ffaa00;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        a:hover {
+            color: #ffcc00;
+            text-decoration: underline;
+        }
+
+        /* Настройки пасты */
+        .paste-settings {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Карточки паст */
+        .paste-card {
+            background: #151515;
+            border-left: 4px solid #ff4444;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .paste-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(255, 68, 68, 0.2);
+        }
+
+        .paste-card h3 {
+            color: #ff4444;
+            margin-bottom: 0.5rem;
+            font-size: 1.3rem;
+        }
+
+        .paste-card .paste-meta {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .paste-card .paste-id {
+            background: #222;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .paste-card .paste-content {
+            white-space: pre-wrap;
+            margin-bottom: 1rem;
+            background: #1a1a1a;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #222;
+            font-family: 'Courier New', monospace;
+            line-height: 1.4;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .paste-card .paste-author {
+            color: #ffaa00;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .author-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .verified-badge {
+            color: #00ff00;
+            font-size: 0.8rem;
+        }
+
+        .moderator-badge {
+            color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .paste-card .paste-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .paste-card .edit-btn {
+            background: linear-gradient(135deg, #ffaa00, #cc8800);
+        }
+
+        .paste-card .edit-btn:hover {
+            background: linear-gradient(135deg, #ffbb00, #dd9900);
+        }
+
+        .paste-card .delete-btn {
+            background: linear-gradient(135deg, #ff4444, #cc3333);
+        }
+
+        .paste-card .delete-btn:hover {
+            background: linear-gradient(135deg, #ff5555, #dd4444);
+        }
+
+        .paste-card .comment-btn {
+            background: linear-gradient(135deg, #0088cc, #006699);
+        }
+
+        .paste-card .comment-btn:hover {
+            background: linear-gradient(135deg, #0099dd, #0077aa);
+        }
+
+        /* Комментарии */
+        .comments-section {
+            margin-top: 2rem;
+            border-top: 1px solid #222;
+            padding-top: 1rem;
+        }
+
+        .comment {
+            background: #1a1a1a;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            border-left: 3px solid #0088cc;
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .comment-author {
+            color: #ffaa00;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Профиль пользователя */
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #222;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #ff4444;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-name {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .profile-username {
+            font-size: 2rem;
+            color: #ff4444;
+        }
+
+        .profile-badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .badge-admin {
+            background: linear-gradient(135deg, #ff4444, #cc0000);
+            color: white;
+        }
+
+        .badge-moderator {
+            background: linear-gradient(135deg, #ff4444, #cc0000);
+            color: white;
+        }
+
+        .badge-verified {
+            background: linear-gradient(135deg, #00c851, #007e33);
+            color: white;
+        }
+
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-item {
+            background: #151515;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #222;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ff4444;
+        }
+
+        /* Защита от DDoS */
+        .ddos-protection {
+            background: linear-gradient(135deg, #ff4444, #cc0000);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-left: 1rem;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .nav-search {
+                width: 100%;
+                max-width: none;
+                margin: 0;
+            }
+            
+            .container {
+                margin: 1rem auto;
+            }
+            
+            .paste-settings {
+                grid-template-columns: 1fr;
+            }
+            
+            .paste-card .paste-actions {
+                flex-direction: column;
+            }
+            
+            .user-info {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        /* Прокрутка */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #111;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #ff4444;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff5555;
+        }
+
+        /* Анимации */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .paste-card, .stat-card, .welcome-section, .auth-section, .paste-section {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Вкладки профиля */
+        .profile-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #222;
+        }
+
+        .profile-tab {
+            padding: 1rem 2rem;
+            background: transparent;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .profile-tab.active {
+            color: #ff4444;
+            border-bottom-color: #ff4444;
+        }
+
+        .profile-tab:hover {
+            color: #ff4444;
+        }
+
+        /* Админ панель */
+        .admin-controls {
+            background: #151515;
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 1px solid #222;
+            margin-bottom: 2rem;
+        }
+
+        .user-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: #1a1a1a;
+            border-radius: 8px;
+            border: 1px solid #222;
+        }
+
+        .user-item-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .admin-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Навигационная панель -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h1><i class="fas fa-skull-crossbones"></i> PastBin</h1>
+                <span class="ddos-protection">
+                    <i class="fas fa-shield-alt"></i> DDoS Protected
+                </span>
+            </div>
+            <div class="nav-search">
+                <input type="text" id="searchInput" placeholder="Поиск по ID или содержимому...">
+                <button id="searchBtn"><i class="fas fa-search"></i> Найти</button>
+            </div>
+            <div class="nav-auth">
+                <button id="telegramBtn"><i class="fab fa-telegram"></i> AttackPsychos</button>
+                <div id="userInfo" class="user-info hidden">
+                    <img id="userAvatarImg" src="" alt="Avatar" class="user-avatar">
+                    <span id="userName"></span>
+                    <span class="user-rating" id="userRating">★4.2</span>
+                </div>
+                <button id="loginBtn">Войти</button>
+                <button id="registerBtn">Регистрация</button>
+                <button id="addPasteBtn" class="hidden">+</button>
+                <button id="logoutBtn" class="hidden">Выйти</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+    <main class="container">
+        <!-- Статистика -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-number" id="totalPastes">0</div>
+                <div>Всего паст</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="todayPastes">0</div>
+                <div>Паст сегодня</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalUsers">0</div>
+                <div>Пользователей</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="onlineUsers">0</div>
+                <div>Онлайн сейчас</div>
+            </div>
+        </div>
+
+        <!-- Приветственный блок -->
+        <section id="welcomeSection" class="welcome-section">
+            <h2>Добро пожаловать в PastBin</h2>
+            <p>Продвинутый сервис для обмена текстовыми фрагментами с функциями анонимности и модерации.</p>
+            <div style="margin-top: 1.5rem;">
+                <h3>Возможности системы:</h3>
+                <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                    <li>💀 Анонимное создание паст</li>
+                    <li>🛡️ <strong>DDoS Protection</strong> - защита от атак</li>
+                    <li>⭐ Система рейтинга пользователей</li>
+                    <li>💬 Комментарии к пастам</li>
+                    <li>🔍 Поиск по содержимому</li>
+                    <li>⚙️ Настройки срока жизни паст</li>
+                    <li>👁️‍🗨️ Разные уровни приватности</li>
+                    <li>📱 <strong>Кликабельные пасты</strong> - просмотр всех публикаций</li>
+                    <li>👤 <strong>Система профилей</strong> - аватарки и описания</li>
+                    <li>✅ <strong>Верификация</strong> - галочки от администрации</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Форма входа -->
+        <section id="loginSection" class="auth-section hidden">
+            <h2>Вход в систему</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <input type="text" id="loginUsername" placeholder="Имя пользователя" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="loginPassword" placeholder="Пароль" required>
+                </div>
+                <button type="submit"><i class="fas fa-sign-in-alt"></i> Войти в систему</button>
+            </form>
+            <p style="margin-top: 1rem;">Нет аккаунта? <a href="#" id="showRegister">Зарегистрироваться</a></p>
+        </section>
+
+        <!-- Форма регистрации -->
+        <section id="registerSection" class="auth-section hidden">
+            <h2>Регистрация</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <input type="text" id="registerUsername" placeholder="Имя пользователя" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" id="registerEmail" placeholder="Email" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="registerPassword" placeholder="Пароль" required>
+                </div>
+                <button type="submit"><i class="fas fa-user-plus"></i> Создать аккаунт</button>
+            </form>
+            <p style="margin-top: 1rem;">Уже есть аккаунт? <a href="#" id="showLogin">Войти</a></p>
+        </section>
+
+        <!-- Профиль пользователя -->
+        <section id="profileSection" class="profile-section hidden">
+            <div class="profile-header">
+                <img id="profileAvatar" src="" alt="Avatar" class="profile-avatar">
+                <div class="profile-info">
+                    <div class="profile-name">
+                        <h1 id="profileUsername" class="profile-username"></h1>
+                        <div id="profileBadges" class="profile-badges"></div>
+                    </div>
+                    <p id="profileBio" class="profile-bio"></p>
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <div class="stat-number" id="profilePastesCount">0</div>
+                            <div>Паст</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="profileCommentsCount">0</div>
+                            <div>Комментариев</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="profileRating">★0.0</div>
+                            <div>Рейтинг</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="profileJoinDate">-</div>
+                            <div>Дата регистрации</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-tabs">
+                <button class="profile-tab active" data-tab="edit">Редактировать профиль</button>
+                <button class="profile-tab" data-tab="security">Безопасность</button>
+                <button class="profile-tab" data-tab="pastes" id="pastesTab">Мои пасты</button>
+                <button class="profile-tab" data-tab="admin" id="adminTab" style="display: none;">Админ панель</button>
+            </div>
+
+            <!-- Редактирование профиля -->
+            <div id="editTab" class="tab-content">
+                <h3>Редактирование профиля</h3>
+                <form id="editProfileForm">
+                    <div class="form-group">
+                        <label>Аватарка (URL):</label>
+                        <input type="url" id="editAvatar" placeholder="https://example.com/avatar.jpg">
+                    </div>
+                    <div class="form-group">
+                        <label>Описание профиля:</label>
+                        <textarea id="editBio" placeholder="Расскажите о себе..." rows="4"></textarea>
+                    </div>
+                    <button type="submit"><i class="fas fa-save"></i> Сохранить изменения</button>
+                </form>
+            </div>
+
+            <!-- Безопасность -->
+            <div id="securityTab" class="tab-content hidden">
+                <h3>Смена пароля и ника</h3>
+                <form id="changePasswordForm">
+                    <div class="form-group">
+                        <label>Новый никнейм:</label>
+                        <input type="text" id="newUsername" placeholder="Новое имя пользователя">
+                    </div>
+                    <div class="form-group">
+                        <label>Текущий пароль:</label>
+                        <input type="password" id="currentPassword" placeholder="Текущий пароль" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Новый пароль:</label>
+                        <input type="password" id="newPassword" placeholder="Новый пароль">
+                    </div>
+                    <button type="submit"><i class="fas fa-key"></i> Обновить данные</button>
+                </form>
+            </div>
+
+            <!-- Мои пасты -->
+            <div id="pastesTabContent" class="tab-content hidden">
+                <h3>Мои пасты</h3>
+                <div id="userPastesContainer"></div>
+            </div>
+
+            <!-- Админ панель -->
+            <div id="adminTabContent" class="tab-content hidden">
+                <h3>Панель администратора</h3>
+                <div class="admin-controls">
+                    <h4>Управление пользователями</h4>
+                    <div class="user-list" id="adminUsersList"></div>
+                </div>
+                <div id="adminPastesContainer"></div>
+            </div>
+        </section>
+
+        <!-- Форма создания пасты -->
+        <section id="createPasteSection" class="paste-section hidden">
+            <h2>Создать новую пасту</h2>
+            <div class="paste-settings">
+                <div class="form-group">
+                    <label>Срок жизни:</label>
+                    <select id="pasteExpiration">
+                        <option value="never">Никогда не удалять</option>
+                        <option value="1h">1 час</option>
+                        <option value="1d">1 день</option>
+                        <option value="1w">1 неделя</option>
+                        <option value="1m">1 месяц</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Приватность:</label>
+                    <select id="pasteVisibility">
+                        <option value="public">Публичная</option>
+                        <option value="unlisted">Скрытая (только по ссылке)</option>
+                        <option value="private">Приватная</option>
+                    </select>
+                </div>
+            </div>
+            <form id="createPasteForm">
+                <div class="form-group">
+                    <input type="text" id="pasteTitle" placeholder="Название пасты" required>
+                </div>
+                <div class="form-group">
+                    <textarea id="pasteContent" placeholder="Содержимое пасты..." required></textarea>
+                </div>
+                <button type="submit"><i class="fas fa-save"></i> Опубликовать пасту</button>
+            </form>
+        </section>
+
+        <!-- Результаты поиска -->
+        <section id="searchResults" class="paste-section hidden">
+            <h2>Результаты поиска</h2>
+            <div id="searchResultsContainer"></div>
+        </section>
+
+        <!-- Список паст -->
+        <section id="pastesList" class="paste-section">
+            <h2>Последние публикации <small>(кликните на пасту для просмотра)</small></h2>
+            <div id="pastesContainer"></div>
+        </section>
+    </main>
+
+    <!-- Модальные окна -->
+    <div id="editModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Редактировать пасту</h2>
+            <form id="editPasteForm">
+                <input type="hidden" id="editPasteId">
+                <div class="form-group">
+                    <input type="text" id="editPasteTitle" placeholder="Название пасты" required>
+                </div>
+                <div class="form-group">
+                    <textarea id="editPasteContent" placeholder="Содержимое пасты..." required></textarea>
+                </div>
+                <button type="submit"><i class="fas fa-save"></i> Сохранить изменения</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="commentsModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" id="closeComments">&times;</span>
+            <h2>Комментарии к пасте</h2>
+            <div id="commentsList" class="comments-section"></div>
+            <form id="addCommentForm" class="hidden">
+                <div class="form-group">
+                    <textarea id="commentText" placeholder="Ваш комментарий..." required></textarea>
+                </div>
+                <button type="submit"><i class="fas fa-comment"></i> Добавить комментарий</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="allPastesModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" id="closeAllPastes">&times;</span>
+            <h2>Все публикации пользователя: <span id="modalAuthorName"></span></h2>
+            <div id="userPastesContainer" class="comments-section"></div>
+        </div>
+    </div>
+
+    <!-- Уведомление -->
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // Расширенные данные приложения
+        let users = JSON.parse(localStorage.getItem('pastbin_users')) || [];
+        let pastes = JSON.parse(localStorage.getItem('pastbin_pastes')) || [];
+        let comments = JSON.parse(localStorage.getItem('pastbin_comments')) || [];
+        let currentUser = JSON.parse(localStorage.getItem('pastbin_currentUser')) || null;
+        let userStats = JSON.parse(localStorage.getItem('pastbin_userStats')) || {};
+        let userProfiles = JSON.parse(localStorage.getItem('pastbin_userProfiles')) || {};
+
+        // Создаем администратора Psychos
+        if (!users.find(user => user.username === 'Psychos')) {
+            users.push({
+                id: generateId(),
+                username: 'Psychos',
+                email: 'psychos@pastbin.com',
+                password: 'PsychosGodKm373',
+                joinDate: new Date().toISOString(),
+                rating: 5.0,
+                role: 'admin',
+                isVerified: true
+            });
+            userStats['Psychos'] = { pastesCount: 0, commentsCount: 0, lastActive: new Date().toISOString() };
+            userProfiles['Psychos'] = {
+                avatar: 'https://i.imgur.com/3Q7Yc7Q.png',
+                bio: 'Главный администратор PastBin',
+                badges: ['admin', 'verified']
+            };
+            localStorage.setItem('pastbin_users', JSON.stringify(users));
+            localStorage.setItem('pastbin_userStats', JSON.stringify(userStats));
+            localStorage.setItem('pastbin_userProfiles', JSON.stringify(userProfiles));
+        }
+
+        // Защита от DDoS
+        let requestCount = 0;
+        let lastRequestTime = Date.now();
+        const MAX_REQUESTS_PER_MINUTE = 60;
+
+        function checkDDoSProtection() {
+            const now = Date.now();
+            const timeDiff = now - lastRequestTime;
+            
+            if (timeDiff > 60000) {
+                requestCount = 0;
+                lastRequestTime = now;
+            }
+            
+            requestCount++;
+            
+            if (requestCount > MAX_REQUESTS_PER_MINUTE) {
+                showNotification('Слишком много запросов! Подождите немного.', true);
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Генерация ID
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Показать уведомление
+        function showNotification(message, isError = false) {
+            if (!checkDDoSProtection()) return;
+            
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${isError ? 'error' : ''}`;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 4000);
+        }
+
+        // Обновление статистики
+        function updateStats() {
+            if (!checkDDoSProtection()) return;
+            
+            document.getElementById('totalPastes').textContent = pastes.length;
+            document.getElementById('totalUsers').textContent = users.length;
+            
+            const today = new Date().toDateString();
+            const todayPastes = pastes.filter(paste => new Date(paste.createdAt).toDateString() === today);
+            document.getElementById('todayPastes').textContent = todayPastes.length;
+            
+            document.getElementById('onlineUsers').textContent = Math.floor(Math.random() * 50) + 10;
+        }
+
+        // DOM элементы
+        const elements = {
+            welcomeSection: document.getElementById('welcomeSection'),
+            loginSection: document.getElementById('loginSection'),
+            registerSection: document.getElementById('registerSection'),
+            profileSection: document.getElementById('profileSection'),
+            createPasteSection: document.getElementById('createPasteSection'),
+            searchResults: document.getElementById('searchResults'),
+            pastesList: document.getElementById('pastesList'),
+            loginBtn: document.getElementById('loginBtn'),
+            registerBtn: document.getElementById('registerBtn'),
+            addPasteBtn: document.getElementById('addPasteBtn'),
+            logoutBtn: document.getElementById('logoutBtn'),
+            searchBtn: document.getElementById('searchBtn'),
+            searchInput: document.getElementById('searchInput'),
+            telegramBtn: document.getElementById('telegramBtn'),
+            userInfo: document.getElementById('userInfo'),
+            userName: document.getElementById('userName'),
+            userAvatarImg: document.getElementById('userAvatarImg'),
+            userRating: document.getElementById('userRating'),
+            loginForm: document.getElementById('loginForm'),
+            registerForm: document.getElementById('registerForm'),
+            editProfileForm: document.getElementById('editProfileForm'),
+            changePasswordForm: document.getElementById('changePasswordForm'),
+            createPasteForm: document.getElementById('createPasteForm'),
+            editPasteForm: document.getElementById('editPasteForm'),
+            showRegister: document.getElementById('showRegister'),
+            showLogin: document.getElementById('showLogin'),
+            pastesContainer: document.getElementById('pastesContainer'),
+            userPastesContainer: document.getElementById('userPastesContainer'),
+            searchResultsContainer: document.getElementById('searchResultsContainer'),
+            adminPastesContainer: document.getElementById('adminPastesContainer'),
+            adminUsersList: document.getElementById('adminUsersList'),
+            editModal: document.getElementById('editModal'),
+            closeModal: document.querySelector('.close'),
+            commentsModal: document.getElementById('commentsModal'),
+            closeComments: document.getElementById('closeComments'),
+            commentsList: document.getElementById('commentsList'),
+            addCommentForm: document.getElementById('addCommentForm'),
+            commentText: document.getElementById('commentText'),
+            allPastesModal: document.getElementById('allPastesModal'),
+            closeAllPastes: document.getElementById('closeAllPastes'),
+            modalAuthorName: document.getElementById('modalAuthorName'),
+            profileUsername: document.getElementById('profileUsername'),
+            profileAvatar: document.getElementById('profileAvatar'),
+            profileBio: document.getElementById('profileBio'),
+            profileBadges: document.getElementById('profileBadges'),
+            profilePastesCount: document.getElementById('profilePastesCount'),
+            profileCommentsCount: document.getElementById('profileCommentsCount'),
+            profileRating: document.getElementById('profileRating'),
+            profileJoinDate: document.getElementById('profileJoinDate'),
+            editAvatar: document.getElementById('editAvatar'),
+            editBio: document.getElementById('editBio'),
+            newUsername: document.getElementById('newUsername'),
+            currentPassword: document.getElementById('currentPassword'),
+            newPassword: document.getElementById('newPassword'),
+            pastesTab: document.getElementById('pastesTab'),
+            adminTab: document.getElementById('adminTab')
+        };
+
+        // Инициализация приложения
+        function initApp() {
+            if (!checkDDoSProtection()) return;
+            updateUI();
+            renderPastes();
+            updateStats();
+        }
+
+        // Обновление UI
+        function updateUI() {
+            if (currentUser) {
+                elements.loginBtn.classList.add('hidden');
+                elements.registerBtn.classList.add('hidden');
+                elements.addPasteBtn.classList.remove('hidden');
+                elements.logoutBtn.classList.remove('hidden');
+                elements.userInfo.classList.remove('hidden');
+                elements.welcomeSection.classList.add('hidden');
+                elements.loginSection.classList.add('hidden');
+                elements.registerSection.classList.add('hidden');
+                
+                elements.userName.textContent = currentUser.username;
+                
+                // Обновляем аватарку в навигации
+                const profile = userProfiles[currentUser.username];
+                if (profile && profile.avatar) {
+                    elements.userAvatarImg.src = profile.avatar;
+                } else {
+                    elements.userAvatarImg.src = 'https://i.imgur.com/3Q7Yc7Q.png';
+                }
+
+                // Показываем админ панель если пользователь админ
+                if (currentUser.role === 'admin') {
+                    elements.adminTab.style.display = 'block';
+                    renderAdminPanel();
+                }
+
+            } else {
+                elements.loginBtn.classList.remove('hidden');
+                elements.registerBtn.classList.remove('hidden');
+                elements.addPasteBtn.classList.add('hidden');
+                elements.logoutBtn.classList.add('hidden');
+                elements.userInfo.classList.add('hidden');
+                elements.createPasteSection.classList.add('hidden');
+                elements.profileSection.classList.add('hidden');
+                elements.welcomeSection.classList.remove('hidden');
+            }
+        }
+
+        // Показать профиль пользователя
+        function showProfile() {
+            if (!currentUser) return;
+            
+            elements.profileSection.classList.remove('hidden');
+            elements.welcomeSection.classList.add('hidden');
+            elements.pastesList.classList.add('hidden');
+            elements.createPasteSection.classList.add('hidden');
+            
+            // Заполняем данные профиля
+            const profile = userProfiles[currentUser.username] || {};
+            const stats = userStats[currentUser.username] || { pastesCount: 0, commentsCount: 0 };
+            
+            elements.profileUsername.textContent = currentUser.username;
+            elements.profileAvatar.src = profile.avatar || 'https://i.imgur.com/3Q7Yc7Q.png';
+            elements.profileBio.textContent = profile.bio || 'Пользователь еще не добавил описание.';
+            elements.profilePastesCount.textContent = stats.pastesCount || 0;
+            elements.profileCommentsCount.textContent = stats.commentsCount || 0;
+            elements.profileRating.textContent = `★${(currentUser.rating || 4.2).toFixed(1)}`;
+            elements.profileJoinDate.textContent = new Date(currentUser.joinDate).toLocaleDateString();
+            
+            // Заполняем форму редактирования
+            elements.editAvatar.value = profile.avatar || '';
+            elements.editBio.value = profile.bio || '';
+            
+            // Показываем бейджи
+            renderProfileBadges();
+            
+            // Показываем вкладку по умолчанию
+            showTab('edit');
+        }
+
+        // Рендер бейджей профиля
+        function renderProfileBadges() {
+            elements.profileBadges.innerHTML = '';
+            
+            if (currentUser.role === 'admin') {
+                const adminBadge = document.createElement('span');
+                adminBadge.className = 'badge badge-admin';
+                adminBadge.textContent = 'АДМИН';
+                elements.profileBadges.appendChild(adminBadge);
+            } else if (currentUser.role === 'moderator') {
+                const modBadge = document.createElement('span');
+                modBadge.className = 'badge badge-moderator';
+                modBadge.textContent = 'МОДЕРАТОР';
+                elements.profileBadges.appendChild(modBadge);
+            }
+            
+            if (currentUser.isVerified) {
+                const verifiedBadge = document.createElement('span');
+                verifiedBadge.className = 'badge badge-verified';
+                verifiedBadge.textContent = 'ПРОВЕРЕННЫЙ';
+                elements.profileBadges.appendChild(verifiedBadge);
+            }
+        }
+
+        // Показать вкладку профиля
+        function showTab(tabName) {
+            // Скрываем все вкладки
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // Убираем активный класс со всех кнопок
+            document.querySelectorAll('.profile-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Показываем выбранную вкладку
+            document.getElementById(tabName + 'Tab').classList.remove('hidden');
+            
+            // Добавляем активный класс к кнопке
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            
+            // Если это вкладка с пастами, загружаем пасты пользователя
+            if (tabName === 'pastes') {
+                renderUserPastes();
+            }
+        }
+
+        // Рендер паст пользователя
+        function renderUserPastes() {
+            if (!currentUser) return;
+            
+            const userPastes = pastes.filter(paste => paste.author === currentUser.username);
+            elements.userPastesContainer.innerHTML = '';
+            
+            if (userPastes.length === 0) {
+                elements.userPastesContainer.innerHTML = '<p>У вас пока нет созданных паст.</p>';
+                return;
+            }
+            
+            userPastes.slice().reverse().forEach(paste => {
+                const pasteCard = document.createElement('div');
+                pasteCard.className = 'paste-card';
+                pasteCard.innerHTML = `
+                    <h3>${paste.title}</h3>
+                    <div class="paste-meta">
+                        <span class="paste-id">ID: ${paste.id}</span>
+                        <span>${new Date(paste.createdAt).toLocaleDateString()}</span>
+                        <span>💬 ${getCommentsCount(paste.id)}</span>
+                    </div>
+                    <div class="paste-content">${paste.content}</div>
+                    <div class="paste-actions">
+                        <button class="edit-btn" data-id="${paste.id}"><i class="fas fa-edit"></i> Редактировать</button>
+                        <button class="delete-btn" data-id="${paste.id}"><i class="fas fa-trash"></i> Удалить</button>
+                    </div>
+                `;
+                elements.userPastesContainer.appendChild(pasteCard);
+            });
+        }
+
+        // Рендер админ панели
+        function renderAdminPanel() {
+            if (!currentUser || currentUser.role !== 'admin') return;
+            
+            // Рендерим список пользователей
+            elements.adminUsersList.innerHTML = '';
+            users.forEach(user => {
+                if (user.username === currentUser.username) return; // Не показываем себя
+                
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+                userItem.innerHTML = `
+                    <div class="user-item-info">
+                        <span>${user.username}</span>
+                        <span style="color: #aaa;">${user.role || 'user'}</span>
+                    </div>
+                    <div class="admin-actions">
+                        ${user.role !== 'moderator' ? 
+                            `<button class="make-moderator-btn" data-user="${user.username}">Сделать модератором</button>` : 
+                            `<button class="remove-moderator-btn" data-user="${user.username}">Убрать модератора</button>`
+                        }
+                        ${!user.isVerified ? 
+                            `<button class="verify-btn" data-user="${user.username}">Выдать галочку</button>` : 
+                            `<button class="unverify-btn" data-user="${user.username}">Убрать галочку</button>`
+                        }
+                    </div>
+                `;
+                elements.adminUsersList.appendChild(userItem);
+            });
+            
+            // Добавляем обработчики для кнопок админки
+            document.querySelectorAll('.make-moderator-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const username = e.target.getAttribute('data-user');
+                    makeModerator(username);
+                });
+            });
+            
+            document.querySelectorAll('.remove-moderator-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const username = e.target.getAttribute('data-user');
+                    removeModerator(username);
+                });
+            });
+            
+            document.querySelectorAll('.verify-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const username = e.target.getAttribute('data-user');
+                    verifyUser(username);
+                });
+            });
+            
+            document.querySelectorAll('.unverify-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const username = e.target.getAttribute('data-user');
+                    unverifyUser(username);
+                });
+            });
+        }
+
+        // Админские функции
+        function makeModerator(username) {
+            const user = users.find(u => u.username === username);
+            if (user) {
+                user.role = 'moderator';
+                localStorage.setItem('pastbin_users', JSON.stringify(users));
+                showNotification(`Пользователь ${username} теперь модератор`);
+                renderAdminPanel();
+            }
+        }
+
+        function removeModerator(username) {
+            const user = users.find(u => u.username === username);
+            if (user) {
+                user.role = 'user';
+                localStorage.setItem('pastbin_users', JSON.stringify(users));
+                showNotification(`У пользователя ${username} убраны права модератора`);
+                renderAdminPanel();
+            }
+        }
+
+        function verifyUser(username) {
+            const user = users.find(u => u.username === username);
+            if (user) {
+                user.isVerified = true;
+                localStorage.setItem('pastbin_users', JSON.stringify(users));
+                showNotification(`Пользователь ${username} получил галочку`);
+                renderAdminPanel();
+            }
+        }
+
+        function unverifyUser(username) {
+            const user = users.find(u => u.username === username);
+            if (user) {
+                user.isVerified = false;
+                localStorage.setItem('pastbin_users', JSON.stringify(users));
+                showNotification(`У пользователя ${username} убрана галочка`);
+                renderAdminPanel();
+            }
+        }
+
+        // Рендер списка паст
+        function renderPastes() {
+            if (!checkDDoSProtection()) return;
+            
+            elements.pastesContainer.innerHTML = '';
+            
+            if (pastes.length === 0) {
+                elements.pastesContainer.innerHTML = '<p>Пока нет созданных паст. Будьте первым!</p>';
+                return;
+            }
+            
+            const publicPastes = pastes.filter(paste => paste.visibility !== 'private').slice(-20).reverse();
+            
+            publicPastes.forEach(paste => {
+                const authorUser = users.find(u => u.username === paste.author);
+                const authorProfile = userProfiles[paste.author] || {};
+                
+                const pasteCard = document.createElement('div');
+                pasteCard.className = 'paste-card';
+                pasteCard.innerHTML = `
+                    <h3>${paste.title}</h3>
+                    <div class="paste-meta">
+                        <span class="paste-id">ID: ${paste.id}</span>
+                        <span class="paste-author" data-author="${paste.author}">
+                            <img src="${authorProfile.avatar || 'https://i.imgur.com/3Q7Yc7Q.png'}" alt="Avatar" class="author-avatar">
+                            ${paste.author}
+                            ${authorUser && authorUser.isVerified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
+                            ${authorUser && authorUser.role === 'moderator' ? '<span class="moderator-badge">МОДЕРАТОР</span>' : ''}
+                            ${authorUser && authorUser.role === 'admin' ? '<span class="moderator-badge">АДМИН</span>' : ''}
+                        </span>
+                        <span>${new Date(paste.createdAt).toLocaleDateString()}</span>
+                        <span>💬 ${getCommentsCount(paste.id)}</span>
+                    </div>
+                    <div class="paste-content">${paste.content}</div>
+                    <div class="paste-actions">
+                        <button class="comment-btn" data-id="${paste.id}"><i class="fas fa-comment"></i> Комментарии</button>
+                        ${(currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator' || currentUser.username === paste.author)) ? `
+                            <button class="edit-btn" data-id="${paste.id}"><i class="fas fa-edit"></i> Редактировать</button>
+                            <button class="delete-btn" data-id="${paste.id}"><i class="fas fa-trash"></i> Удалить</button>
+                        ` : ''}
+                    </div>
+                `;
+                elements.pastesContainer.appendChild(pasteCard);
+            });
+            
+            // Добавляем обработчики
+            addPasteEventListeners();
+        }
+
+        // Добавление обработчиков событий для паст
+        function addPasteEventListeners() {
+            // Обработчики для авторов
+            document.querySelectorAll('.paste-author').forEach(author => {
+                author.style.cursor = 'pointer';
+                author.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const authorName = e.target.getAttribute('data-author') || e.target.closest('.paste-author').getAttribute('data-author');
+                    showAllUserPastes(authorName);
+                });
+            });
+            
+            // Обработчики для комментариев
+            document.querySelectorAll('.comment-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const pasteId = e.target.getAttribute('data-id');
+                    openCommentsModal(pasteId);
+                });
+            });
+            
+            // Обработчики для редактирования и удаления
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const pasteId = e.target.getAttribute('data-id');
+                    openEditModal(pasteId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const pasteId = e.target.getAttribute('data-id');
+                    deletePaste(pasteId);
+                });
+            });
+        }
+
+        // Получить количество комментариев
+        function getCommentsCount(pasteId) {
+            return comments.filter(comment => comment.pasteId === pasteId).length;
+        }
+
+        // Показать все пасты пользователя
+        function showAllUserPastes(authorName) {
+            if (!checkDDoSProtection()) return;
+            
+            const userPastes = pastes.filter(paste => paste.author === authorName && paste.visibility !== 'private');
+            
+            elements.modalAuthorName.textContent = authorName;
+            elements.userPastesContainer.innerHTML = '';
+            
+            if (userPastes.length === 0) {
+                elements.userPastesContainer.innerHTML = '<p>У этого пользователя пока нет публичных паст.</p>';
+            } else {
+                userPastes.forEach(paste => {
+                    const pasteElement = document.createElement('div');
+                    pasteElement.className = 'paste-card';
+                    pasteElement.innerHTML = `
+                        <h3>${paste.title}</h3>
+                        <div class="paste-meta">
+                            <span class="paste-id">ID: ${paste.id}</span>
+                            <span>${new Date(paste.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <div class="paste-content">${paste.content}</div>
+                    `;
+                    elements.userPastesContainer.appendChild(pasteElement);
+                });
+            }
+            
+            elements.allPastesModal.classList.remove('hidden');
+        }
+
+        // Остальные функции (createPaste, editPaste, deletePaste, addComment, searchPaste и т.д.)
+        // ... (они остаются такими же как в предыдущей версии, но с учетом новой структуры данных)
+
+        // Регистрация пользователя
+        function registerUser(username, email, password) {
+            if (!checkDDoSProtection()) return false;
+            
+            const existingUser = users.find(user => user.username === username || user.email === email);
+            
+            if (existingUser) {
+                showNotification('Пользователь с таким именем или email уже существует!', true);
+                return false;
+            }
+            
+            const newUser = {
+                id: generateId(),
+                username,
+                email,
+                password,
+                joinDate: new Date().toISOString(),
+                rating: 4.0 + Math.random(),
+                role: 'user',
+                isVerified: false
+            };
+            
+            users.push(newUser);
+            userStats[username] = { pastesCount: 0, commentsCount: 0, lastActive: new Date().toISOString() };
+            userProfiles[username] = {
+                avatar: '',
+                bio: '',
+                badges: []
+            };
+            
+            localStorage.setItem('pastbin_users', JSON.stringify(users));
+            localStorage.setItem('pastbin_userStats', JSON.stringify(userStats));
+            localStorage.setItem('pastbin_userProfiles', JSON.stringify(userProfiles));
+            
+            return true;
+        }
+
+        // Авторизация пользователя
+        function loginUser(username, password) {
+            if (!checkDDoSProtection()) return false;
+            
+            const user = users.find(u => u.username === username && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('pastbin_currentUser', JSON.stringify(currentUser));
+                
+                // Обновляем время последней активности
+                if (userStats[username]) {
+                    userStats[username].lastActive = new Date().toISOString();
+                    localStorage.setItem('pastbin_userStats', JSON.stringify(userStats));
+                }
+                
+                return true;
+            }
+            
+            return false;
+        }
+
+        // Выход из системы
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('pastbin_currentUser');
+            updateUI();
+            renderPastes();
+            updateStats();
+            showNotification('Вы вышли из системы');
+        }
+
+        // Обработчики событий
+        elements.userInfo.addEventListener('click', showProfile);
+        
+        elements.editProfileForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const avatar = elements.editAvatar.value;
+            const bio = elements.editBio.value;
+            
+            if (!userProfiles[currentUser.username]) {
+                userProfiles[currentUser.username] = {};
+            }
+            
+            userProfiles[currentUser.username].avatar = avatar;
+            userProfiles[currentUser.username].bio = bio;
+            
+            localStorage.setItem('pastbin_userProfiles', JSON.stringify(userProfiles));
+            showNotification('Профиль успешно обновлен!');
+            showProfile(); // Перезагружаем профиль
+        });
+
+        elements.changePasswordForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newUsername = elements.newUsername.value;
+            const currentPassword = elements.currentPassword.value;
+            const newPassword = elements.newPassword.value;
+            
+            // Проверяем текущий пароль
+            if (currentUser.password !== currentPassword) {
+                showNotification('Неверный текущий пароль!', true);
+                return;
+            }
+            
+            // Меняем никнейм если указан
+            if (newUsername && newUsername !== currentUser.username) {
+                const usernameExists = users.find(u => u.username === newUsername && u.id !== currentUser.id);
+                if (usernameExists) {
+                    showNotification('Этот никнейм уже занят!', true);
+                    return;
+                }
+                
+                // Обновляем никнейм во всех данных
+                const oldUsername = currentUser.username;
+                currentUser.username = newUsername;
+                
+                // Обновляем в массиве пользователей
+                const userIndex = users.findIndex(u => u.id === currentUser.id);
+                if (userIndex !== -1) {
+                    users[userIndex].username = newUsername;
+                }
+                
+                // Обновляем в статистике
+                if (userStats[oldUsername]) {
+                    userStats[newUsername] = userStats[oldUsername];
+                    delete userStats[oldUsername];
+                }
+                
+                // Обновляем в профилях
+                if (userProfiles[oldUsername]) {
+                    userProfiles[newUsername] = userProfiles[oldUsername];
+                    delete userProfiles[oldUsername];
+                }
+                
+                // Обновляем в пастах
+                pastes.forEach(paste => {
+                    if (paste.author === oldUsername) {
+                        paste.author = newUsername;
+                    }
+                });
+                
+                // Обновляем в комментариях
+                comments.forEach(comment => {
+                    if (comment.author === oldUsername) {
+                        comment.author = newUsername;
+                    }
+                });
+                
+                showNotification('Никнейм успешно изменен!');
+            }
+            
+            // Меняем пароль если указан
+            if (newPassword) {
+                currentUser.password = newPassword;
+                const userIndex = users.findIndex(u => u.id === currentUser.id);
+                if (userIndex !== -1) {
+                    users[userIndex].password = newPassword;
+                }
+                showNotification('Пароль успешно изменен!');
+            }
+            
+            // Сохраняем изменения
+            localStorage.setItem('pastbin_users', JSON.stringify(users));
+            localStorage.setItem('pastbin_currentUser', JSON.stringify(currentUser));
+            localStorage.setItem('pastbin_pastes', JSON.stringify(pastes));
+            localStorage.setItem('pastbin_comments', JSON.stringify(comments));
+            localStorage.setItem('pastbin_userStats', JSON.stringify(userStats));
+            localStorage.setItem('pastbin_userProfiles', JSON.stringify(userProfiles));
+            
+            // Очищаем форму
+            elements.newUsername.value = '';
+            elements.currentPassword.value = '';
+            elements.newPassword.value = '';
+            
+            // Обновляем UI
+            updateUI();
+        });
+
+        // Обработчики вкладок профиля
+        document.querySelectorAll('.profile-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const tabName = e.target.getAttribute('data-tab');
+                showTab(tabName);
+            });
+        });
+
+        // Остальные обработчики событий (логин, регистрация, создание паст и т.д.)
+        // ... (они остаются такими же как в предыдущей версии)
+
+        // Инициализация приложения при загрузке
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+      </html>
